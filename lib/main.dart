@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'dart:math';
 import 'csv_helper.dart';
 import 'process.dart';
 import 'scheduler.dart';
@@ -47,13 +47,18 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
     timeRequiredMultiplierController = TextEditingController(text: _timeRequiredMultiplier.toString());
   }
 
-  void generateProcesses() {
+  void generateProcesses(int ps) {
+    final random = Random();
+    List<int> timeValues = List.generate(10, (index) => index + 1);
+    List<int> priorityValues = List.generate(ps, (index) => index + 1);
+    timeValues.shuffle(random);
+    priorityValues.shuffle(random);
     processes = List.generate(
       _processCount,
       (index) => Process(
         id: 'P${index + 1}',
-        timeRequired: (index + 1) * _timeRequiredMultiplier,
-        priority: index % 3,
+        timeRequired: timeValues[index % timeValues.length],
+        priority: priorityValues[index % timeValues.length],
       ),
     );
   }
@@ -164,7 +169,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                generateProcesses(); // Generate 5 processes
+                generateProcesses(_processCount); // Generate 5 processes
                 runSimulation();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Simulation completed.')),
