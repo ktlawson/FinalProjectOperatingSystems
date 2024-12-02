@@ -18,17 +18,23 @@ class Scheduler {
   }
 
   void roundRobin(int timeSlice) {
-    bool allCompleted;
-    do {
-      allCompleted = true;
-      for (var process in processes) {
-        if (!process.isCompleted()) {
-          allCompleted = false;
-          process.allocateTimeSlice(min(timeSlice, process.timeRequired - process.timeAllocated));
-        }
-      }
-    } while (!allCompleted);
+  List<Process> queue = List.from(processes);
+  int currentTime = 0;
+
+  while (queue.isNotEmpty) {
+    Process process = queue.removeAt(0);
+
+    int timeAllocated = min(timeSlice, process.timeRequired - process.timeAllocated);
+    process.allocateTimeSlice(timeAllocated);
+    currentTime += timeAllocated;
+
+    if (!process.isCompleted()) {
+      queue.add(process);
+    } else {
+      process.calculateMetrics(currentTime); // Calculate metrics for completed processes
+    }
   }
+}
 
   void priorityScheduling(int timeSlice) {
     processes.sort((a, b) => a.priority.compareTo(b.priority));
