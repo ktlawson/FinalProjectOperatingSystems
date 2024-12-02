@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'csv_helper.dart';
 import 'process.dart';
 import 'scheduler.dart';
-import 'csv_helper.dart';
 
 void main() {
   runApp(const ProcessSchedulerApp());
@@ -12,31 +13,46 @@ class ProcessSchedulerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: SchedulerScreen(),
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
+      home: SchedulerScreen(),
     );
   }
 }
 
 class SchedulerScreen extends StatefulWidget {
+  const SchedulerScreen({super.key});
+
   @override
   _SchedulerScreenState createState() => _SchedulerScreenState();
 }
 
 class _SchedulerScreenState extends State<SchedulerScreen> {
   List<Process> processes = [];
-  List<List<String>> results = []; // Store simulation results
   String selectedStrategy = 'Round Robin';
+  int _processCount = 5;
+  int _timeSlice = 2;
+  int _timeRequiredMultiplier = 2;
   final strategies = ['Round Robin', 'Priority', 'SJF'];
-  final TextEditingController _controller = TextEditingController();
+  List<List<String>> results = [];
+  TextEditingController? processCountController;
+  TextEditingController? timeSliceController;
+  TextEditingController? timeRequiredMultiplierController;
 
-  void generateProcesses(int count) {
+  @override
+  void initState() {
+    super.initState();
+    processCountController = TextEditingController(text: _processCount.toString());
+    timeSliceController = TextEditingController(text: _timeSlice.toString());
+    timeRequiredMultiplierController = TextEditingController(text: _timeRequiredMultiplier.toString());
+  }
+
+  void generateProcesses() {
     processes = List.generate(
-      count,
+      _processCount,
       (index) => Process(
         id: 'P${index + 1}',
-        timeRequired: (index + 1) * 2,
+        timeRequired: (index + 1) * _timeRequiredMultiplier,
         priority: index % 3,
       ),
     );
@@ -44,16 +60,16 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
 
   void runSimulation() {
     final scheduler = Scheduler(processes, strategy: selectedStrategy);
-    scheduler.simulate(2); // Assume time slice of 2 units
-
-    // Store results in the state
+    scheduler.simulate(_timeSlice); // Assume time slice of 2 units
     setState(() {
       results = scheduler.getSimulationResults();
     });
 
-    // Export the results to CSV
     exportToCsv(
-      [['ID', 'Time Required', 'Time Allocated', 'Priority']] + results,
+      [
+            ['ID', 'Time Required', 'Time Allocated', 'Priority']
+          ] +
+          results,
       'simulation_results',
     );
   }
@@ -61,71 +77,170 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Process Scheduler Simulator'),
-                    backgroundColor: Colors.blueAccent,),
+      appBar: AppBar(
+        backgroundColor: Colors.blueAccent,
+        title: const Text('Process Scheduler Simulator',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            DropdownButton<String>(
-              value: selectedStrategy,
-              onChanged: (value) {
-                setState(() {
-                  selectedStrategy = value!;
-                });
-              },
-              items: strategies.map((strategy) {
-                return DropdownMenuItem(
-                  value: strategy,
-                  child: Text(strategy),
-                );
-              }).toList(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Select Strategy',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8), // Spacing between title and TextField
+                      DropdownButton<String>(
+                        value: selectedStrategy,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedStrategy = value!;
+                          });
+                        },
+                        items: strategies.map((strategy) {
+                          return DropdownMenuItem(
+                            value: strategy,
+                            child: Text(strategy),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 200,
+                  child: LabeledTextField(
+                    title: 'Process Count',
+                    controller: processCountController!,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        _processCount = int.tryParse(value) ?? 0;
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: LabeledTextField(
+                    title: 'Time Slice',
+                    controller: timeSliceController!,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        _timeSlice = int.tryParse(value) ?? 2;
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: LabeledTextField(
+                    title: 'Time Req. Multiplier',
+                    controller: timeRequiredMultiplierController!,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      setState(() {
+                        _timeRequiredMultiplier = int.tryParse(value) ?? 0;
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Enter number of processes',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                int count = int.tryParse(_controller.text) ?? 0;
-                generateProcesses(count); // Generate 5 processes
+                generateProcesses(); // Generate 5 processes
                 runSimulation();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Simulation completed!')),
+                  const SnackBar(content: Text('Simulation completed.')),
                 );
               },
               child: const Text('Run Simulation'),
             ),
-            const SizedBox(height: 20),
-            // Display Results in DataTable
-            Expanded(
-              child: results.isNotEmpty
-                  ? DataTable(
-                      columns: const [
-                        DataColumn(label: Text('ID')),
-                        DataColumn(label: Text('Time Required')),
-                        DataColumn(label: Text('Time Allocated')),
-                        DataColumn(label: Text('Priority')),
-                      ],
-                      rows: results.map((result) {
-                        return DataRow(
-                          cells: result.map((cell) {
-                            return DataCell(Text(cell.toString()));
-                          }).toList(),
-                        );
-                      }).toList(),
-                    )
-                  : const Text('No results to display. Run a simulation!'),
-            ),
+            const SizedBox(height: 16),
+            if (results.isNotEmpty) Expanded(child: buildResultsTable()),
           ],
         ),
       ),
+    );
+  }
+
+  Widget buildResultsTable() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('ID')),
+          DataColumn(label: Text('Time Required')),
+          DataColumn(label: Text('Time Allocated')),
+          DataColumn(label: Text('Priority')),
+        ],
+        rows: results
+            .map(
+              (row) => DataRow(
+                cells: row.map((cell) => DataCell(Text(cell.toString()))).toList(),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class LabeledTextField extends StatelessWidget {
+  final String title;
+  final TextEditingController controller;
+  final TextInputType keyboardType;
+  final Function(String)? onChanged;
+  final String? hintText;
+
+  const LabeledTextField({
+    super.key,
+    required this.title,
+    required this.controller,
+    this.keyboardType = TextInputType.text,
+    this.onChanged,
+    this.hintText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8), // Spacing between title and TextField
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            hintText: hintText,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      ],
     );
   }
 }

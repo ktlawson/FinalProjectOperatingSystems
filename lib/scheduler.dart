@@ -49,6 +49,6 @@ class Scheduler {
   }
 
   List<List<String>> getSimulationResults() {
-    return processes.map((p) => [p.id, p.timeRequired.toString(), p.timeAllocated.toString(), p.priority.toString()]).toList();
+    return processes.map((p) => [p.id.toString(), p.timeRequired.toString(), p.timeAllocated.toString(), p.priority.toString()]).toList();;
   }
 }
