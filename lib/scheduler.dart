@@ -70,7 +70,7 @@ class Scheduler {
 
   void shortestJobFirst() {
     List<Process> queue = List.from(processes);
-    queue.sort((a, b) => a.timeRequired.compareTo(b.timeRequired));
+    queue.sort((a, b) => a.timeRequired.compareTo(b.timeRequired)); // Sort by shortest time required
     int currentTime = 0;
 
     for (var process in queue) {
