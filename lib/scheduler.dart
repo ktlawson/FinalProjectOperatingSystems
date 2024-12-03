@@ -9,19 +9,19 @@ class Scheduler {
   Scheduler(this.processes, {this.strategy = 'Round Robin'});
 
   void simulate(int timeSlice) {
+    simulationResults.clear(); // Clear previous results
     if (strategy == 'Round Robin') {
       roundRobin(timeSlice);
     } else if (strategy == 'Priority') {
-      priorityScheduling(timeSlice);
+      priorityScheduling();
     } else if (strategy == 'SJF') {
-      shortestJobFirst(timeSlice);
+      shortestJobFirst();
     }
   }
 
   void roundRobin(int timeSlice) {
     List<Process> queue = List.from(processes);
     int currentTime = 0;
-    simulationResults.clear(); // Clear previous results
 
     while (queue.isNotEmpty) {
       Process process = queue.removeAt(0);
@@ -41,26 +41,52 @@ class Scheduler {
       if (!process.isCompleted()) {
         queue.add(process);
       } else {
-        process.calculateMetrics(currentTime); // Calculate metrics for completed processes
+        process.calculateMetrics(currentTime);
       }
     }
   }
 
-  void priorityScheduling(int timeSlice) {
-    processes.sort((a, b) => a.priority.compareTo(b.priority));
-    for (var process in processes) {
-      while (!process.isCompleted()) {
-        process.allocateTimeSlice(min(timeSlice, process.timeRequired - process.timeAllocated));
-      }
+  void priorityScheduling() {
+    List<Process> queue = List.from(processes);
+    queue.sort((a, b) => a.priority.compareTo(b.priority));
+    int currentTime = 0;
+
+    for (var process in queue) {
+      int timeAllocated = process.timeRequired - process.timeAllocated;
+      process.allocateTimeSlice(timeAllocated);
+      currentTime += timeAllocated;
+
+      // Record the current state of the process
+      simulationResults.add([
+        process.id,
+        process.timeRequired.toString(),
+        timeAllocated.toString(),
+        process.priority.toString()
+      ]);
+
+      process.calculateMetrics(currentTime);
     }
   }
 
-  void shortestJobFirst(int timeSlice) {
-    processes.sort((a, b) => a.timeRequired.compareTo(b.timeRequired));
-    for (var process in processes) {
-      while (!process.isCompleted()) {
-        process.allocateTimeSlice(min(timeSlice, process.timeRequired - process.timeAllocated));
-      }
+  void shortestJobFirst() {
+    List<Process> queue = List.from(processes);
+    queue.sort((a, b) => a.timeRequired.compareTo(b.timeRequired));
+    int currentTime = 0;
+
+    for (var process in queue) {
+      int timeAllocated = process.timeRequired - process.timeAllocated;
+      process.allocateTimeSlice(timeAllocated);
+      currentTime += timeAllocated;
+
+      // Record the current state of the process
+      simulationResults.add([
+        process.id,
+        process.timeRequired.toString(),
+        timeAllocated.toString(),
+        process.priority.toString()
+      ]);
+
+      process.calculateMetrics(currentTime);
     }
   }
 
