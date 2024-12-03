@@ -4,6 +4,7 @@ import 'process.dart';
 class Scheduler {
   final List<Process> processes;
   final String strategy;
+  List<List<String>> simulationResults = [];
 
   Scheduler(this.processes, {this.strategy = 'Round Robin'});
 
@@ -18,23 +19,32 @@ class Scheduler {
   }
 
   void roundRobin(int timeSlice) {
-  List<Process> queue = List.from(processes);
-  int currentTime = 0;
+    List<Process> queue = List.from(processes);
+    int currentTime = 0;
+    simulationResults.clear(); // Clear previous results
 
-  while (queue.isNotEmpty) {
-    Process process = queue.removeAt(0);
+    while (queue.isNotEmpty) {
+      Process process = queue.removeAt(0);
 
-    int timeAllocated = min(timeSlice, process.timeRequired - process.timeAllocated);
-    process.allocateTimeSlice(timeAllocated);
-    currentTime += timeAllocated;
+      int timeAllocated = min(timeSlice, process.timeRequired - process.timeAllocated);
+      process.allocateTimeSlice(timeAllocated);
+      currentTime += timeAllocated;
 
-    if (!process.isCompleted()) {
-      queue.add(process);
-    } else {
-      process.calculateMetrics(currentTime); // Calculate metrics for completed processes
+      // Record the current state of the process
+      simulationResults.add([
+        process.id,
+        process.timeRequired.toString(),
+        timeAllocated.toString(),
+        process.priority.toString()
+      ]);
+
+      if (!process.isCompleted()) {
+        queue.add(process);
+      } else {
+        process.calculateMetrics(currentTime); // Calculate metrics for completed processes
+      }
     }
   }
-}
 
   void priorityScheduling(int timeSlice) {
     processes.sort((a, b) => a.priority.compareTo(b.priority));
@@ -55,6 +65,6 @@ class Scheduler {
   }
 
   List<List<String>> getSimulationResults() {
-    return processes.map((p) => [p.id.toString(), p.timeRequired.toString(), p.timeAllocated.toString(), p.priority.toString()]).toList();;
+    return simulationResults;
   }
 }
