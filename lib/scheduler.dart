@@ -93,4 +93,14 @@ class Scheduler {
   List<List<String>> getSimulationResults() {
     return simulationResults;
   }
+
+  double calculateAverageTurnaroundTime() {
+    int totalTurnaroundTime = processes.fold(0, (sum, process) => sum + process.turnaroundTime);
+    return totalTurnaroundTime / processes.length;
+  }
+
+  double calculateAverageWaitingTime() {
+    int totalWaitingTime = processes.fold(0, (sum, process) => sum + process.waitingTime);
+    return totalWaitingTime / processes.length;
+  }
 }

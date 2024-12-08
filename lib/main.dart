@@ -39,6 +39,9 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
   TextEditingController? timeSliceController;
   TextEditingController? timeRequiredMultiplierController;
 
+  double averageTurnaroundTime = 0.0;
+  double averageWaitingTime = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -57,24 +60,29 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
       _processCount,
       (index) => Process(
         id: 'P${index + 1}',
-        timeRequired: timeValues[index % timeValues.length],
-        priority: priorityValues[index % timeValues.length],
+        // timeRequired: timeValues[index % timeValues.length],
+        // priority: priorityValues[index % timeValues.length],
+        timeRequired: 10-index,
+        priority: index + 1,
       ),
     );
   }
 
   void runSimulation() {
     final scheduler = Scheduler(processes, strategy: selectedStrategy);
-    scheduler.simulate(_timeSlice); // Assume time slice of 2 units
+    scheduler.simulate(_timeSlice);
+
     setState(() {
       results = scheduler.getSimulationResults();
+      averageTurnaroundTime = scheduler.calculateAverageTurnaroundTime();
+      averageWaitingTime = scheduler.calculateAverageWaitingTime();
     });
 
     exportToCsv(
       [
-            ['ID', 'Time Required', 'Time Allocated', 'Priority']
-          ] +
-          results,
+        ['ID', 'Time Required', 'Time Allocated', 'Priority']
+      ] +
+      results,
       'simulation_results',
     );
   }
@@ -91,6 +99,9 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            const SizedBox(height: 16),
+            Text('Average Turnaround Time: $averageTurnaroundTime'),
+            Text('Average Waiting Time: $averageWaitingTime'),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -151,19 +162,19 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                     },
                   ),
                 ),
-                SizedBox(
-                  width: 200,
-                  child: LabeledTextField(
-                    title: 'Time Req. Multiplier',
-                    controller: timeRequiredMultiplierController!,
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      setState(() {
-                        _timeRequiredMultiplier = int.tryParse(value) ?? 0;
-                      });
-                    },
-                  ),
-                ),
+                // SizedBox(
+                //   width: 200,
+                //   child: LabeledTextField(
+                //     title: 'Time Req. Multiplier',
+                //     controller: timeRequiredMultiplierController!,
+                //     keyboardType: TextInputType.number,
+                //     onChanged: (value) {
+                //       setState(() {
+                //         _timeRequiredMultiplier = int.tryParse(value) ?? 0;
+                //       });
+                //     },
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: 16),
